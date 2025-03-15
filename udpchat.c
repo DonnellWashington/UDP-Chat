@@ -19,13 +19,36 @@ void clientSetup(char *serverIP, char *message, char *servPort){
         exit(1);
     }
 
-    struct addrinfo addrCriteria;
+    
 
 }
 
 void serverSetup(char *serverPort){
 
+    struct addrinfo addrCriteria;                               // Criteria for family address
+
+    memset(&addrCriteria, 0, sizeof(addrCriteria));   // Zero out structure
+
+    addrCriteria.ai_family = AF_UNSPEC;                         // Family address
+    addrCriteria.ai_flags = AI_PASSIVE;                         // Passively accept any port y any address
+    addrCriteria.ai_socktype = SOCK_DGRAM;                      // Only datagram socket
+    addrCriteria.ai_protocol = IPPROTO_UDP;                     // Only UDP sockets
+
+    struct addrinfo *servAddr;                                  // List of server addresses
+
+    int rtnVal = getaddrinfo(NULL, serverPort, &addrCriteria, &servAddr);
+
+
+    if (rtnVal != 0) DieWithUserMessage("getaddrinfo() failed", gai_strerror(rtnVal));
+
+    // Create a socket for incoming connections
+    int sock = socket(servAddr->ai_family, servAddr->ai_socktype, servAddr->ai_protocol);
+
+    if (sock < 0) DieWithSystemMessage("socket() failed");
+
+    // Bind to
     
+
 
 }
 
