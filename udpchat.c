@@ -46,7 +46,39 @@ void serverSetup(char *serverPort){
 
     if (sock < 0) DieWithSystemMessage("socket() failed");
 
-    // Bind to
+    // Bind to local address
+    if (bind(sock, servAddr->ai_addr, servAddr->ai_addrlen) < 0){
+        DieWithSystemMessage("socket() failed");
+    }
+
+    // Free addres list allocated by getaddrinfo()
+    freeaddrinfo(servAddr);
+
+    for ( ;; ){
+        struct sockaddr_storage clntAddr;                       // Client address sets length to client address struct
+        socklen_t clntAddrLen = sizeof(clntAddr);
+
+        // Block until message received from client
+        char buffer[MAXSTRINGLENGTH];
+        ssize_t numBytesRecvd = recvfrom(sock, buffer, MAXSTRINGLENGTH, 0, (struct sockaddr *) &clntAddr, &clntAddrLen);
+
+        if (numBytesRecvd < 0) DieWithSystemMessage("recvfrom() failed");
+
+        fputs("Handling client client ", stdout);
+        PrintSocketAddress((struct sockaddr *) &clntAddr, stdout);
+        fputc('\n', stdout);
+
+        // Send received datagram back to the client
+        ssize_t numBytesSent = sendto(sock, buffer,numBytesRecvd, 0, (struct sockaddr *) &clntAddr, sizeof(clntAddr));
+
+        if (numBytesSent < 0) DieWithSystemMessage("sendto() failed");
+
+        else if (numBytesSent != numBytesRecvd) DieWithUserMessage("sendto()", "sent unexpected number of bytes");
+        
+
+    }
+    
+    
     
 
 
