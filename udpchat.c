@@ -6,23 +6,26 @@
 #include<sys/socket.h>
 #include"Practical.h"
 
-// void clientSetup(char *serverIP, char *message, char *servPort){
+void clientSetup(char *serverIP, char *message, char *servPort){
 
 
-//     // Check if the message is too long
-//     int messageLen = strlen(message);
+    // Check if the message is too long
+    int messageLen = strlen(message);
 
-//     if (messageLen > MAXSTRINGLENGTH) DieWithUserMessage(messageLen, "Steing too long");
+    if (messageLen > MAXSTRINGLENGTH){
+        fprintf(stderr, "%s", "The message is too long\n");
+        exit(1);
+    }
 
     
 
-// }
+}
 
-// void serverSetup(char *serverPort){
+void serverSetup(char *serverPort){
 
-//     printf("hELLOW wOLRD");
+    printf("hELLOW wOLRD");
 
-// }
+}
 
 void DieWithUserMessage(const char *msg, const char *detail){
     fputs(msg, stderr);
@@ -50,21 +53,13 @@ int main(int argc, char *argv[]){
     char *echoMessage = argv[2];
     char *servPort = argv[3];
 
-    // char *serverIP = &server;
-    // char *message = &echoMessage;
-    // char *serverPort = &serverPort;
+    // Server CLA's
+    if(argc == 1) serverSetup(servPort);
 
-    // // Server CLA's
-    // if(argc == 1){
-    //     serverSetup(*serverPort);
-    // }
+    // Client CLA's
+    if (argc == 3) clientSetup(server, echoMessage, servPort);
 
-    // // Client CLA's
-    // if (argc == 3){
-    //     clientSetup(*serverIP, *message, *serverPort);
-    // }
-
-    // else DieWithUserMessage("Parameter(s)", "if server <Server Port> if client <Server Address> <Echo Word> <Server Port>");
+    else DieWithUserMessage("Parameter(s)", "if server <Server Port> if client <Server Address> <Echo Word> <Server Port>");
     
 
     return 0;
