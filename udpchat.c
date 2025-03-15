@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200112L
 #include<stdlib.h>
 #include<string.h>
 #include<stdio.h>
@@ -5,6 +6,7 @@
 #include<netdb.h>
 #include<sys/socket.h>
 #include"Practical.h"
+  
 
 void clientSetup(char *serverIP, char *message, char *servPort){
 
@@ -17,13 +19,13 @@ void clientSetup(char *serverIP, char *message, char *servPort){
         exit(1);
     }
 
-    
+    struct addrinfo addrCriteria;
 
 }
 
 void serverSetup(char *serverPort){
 
-    printf("hELLOW wOLRD");
+    
 
 }
 
