@@ -6,6 +6,59 @@
 #include<netdb.h>
 #include<sys/socket.h>
 #include"Practical.h"
+
+bool SockAddrsEqual(const struct sockaddr *addr1, const struct sockaddr *addr2){
+
+    if (addr1 == NULL || addr2 == NULL) return addr1 == addr2;
+    else if (addr1->sa_family != addr2->sa_family) return false;
+    else if(addr1->sa_family == AF_INET) {
+        struct sockaddr_in *ipv4Addr1 = (struct sockaddr_in *) addr1;
+        struct sockaddr_in *ipv4Addr2 = (struct sockaddr_in *) addr2;
+        return ipv4Addr1->sin_addr.s_addr == ipv4Addr2->sin_addr.s_addr && 
+        ipv4Addr1->sin_addr.s_addr == ipv4Addr2->sin_addr.s_addr;
+    }
+
+}
+
+// A function for the socket address
+void PrintSocketAddress(const struct sockaddr *address, FILE *stream){
+
+    // Test for address and stream
+    if (address == NULL || stream == NULL) return;
+
+    void *numericAddress;                               // Pointrer to binary address
+    
+    // Buffer to contain result (IPV6 suffcient to hold IPV4)
+    char addrBuffer[INET6_ADDRSTRLEN];
+    in_port_t port;                                     // Port to print
+
+    // Set pointer to address based on address family
+    switch (address->sa_family){
+
+        case AF_INET:
+            numericAddress = &((struct sockaddr_in *) address)->sin_addr;
+            port = ntohs(((struct sockaddr_in *) address)->sin_port);
+            break;
+
+        case AF_INET6:
+            numericAddress = &((struct sockaddr_in6 *) address)->sin6_addr;
+            port = ntohs(((struct sockaddr_in6 *) address)->sin6_port);
+            break;
+        default:
+        fputs("[unknown type]", stream);                // Unhandled type
+
+        return;
+
+    }
+
+    // Convert binary to pritntable address
+    if (inet_ntop(address->sa_family, numericAddress, addrBuffer, sizeof(addrBuffer)) == NULL){
+        fputs("[invalid address]", stream);
+    }
+    
+
+
+}
   
 // A function to setup the client
 void clientSetup(char *serverIP, char *message, char *servPort){
