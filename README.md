@@ -1,2 +1,2 @@
 # UDP-Chat
-SImple chat room between computers using udp protocol
+Simple chat room between computers using udp protocol
