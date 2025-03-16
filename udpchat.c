@@ -5,6 +5,7 @@
 #include<unistd.h>
 #include<netdb.h>
 #include<sys/socket.h>
+#include<arpa/inet.h>
 #include"Practical.h"
 
 void PrintSocketAddress(const struct sockaddr *address, FILE *stream) {
