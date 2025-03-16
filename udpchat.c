@@ -19,6 +19,49 @@ void clientSetup(char *serverIP, char *message, char *servPort){
         exit(1);
     }
 
+    struct addrinfo addrCriteria;
+
+    memset(&addrCriteria, 0, sizeof(addrCriteria));
+    addrCriteria.ai_family = AF_UNSPEC;
+    addrCriteria.ai_socktype = SOCK_DGRAM;
+    addrCriteria.ai_protocol = IPPROTO_UDP;
+
+    struct addrinfo *servAddr;
+
+    int rtnVal = getaddrinfo(serverIP, servPort, &addrCriteria, &servAddr);
+
+    if (rtnVal != 0) DieWithUserMessage("getaddrinfo() failed", gai_strerror(rtnVal));
+
+    int sock = socket(servAddr->ai_family, servAddr->ai_socktype, servAddr->ai_protocol);
+
+    if (sock < 0) DieWithSystemMessage("sock() failed");
+
+    ssize_t numBytes = sendto(sock, message, messageLen, 0, servAddr->ai_addr, servAddr->ai_addrlen);
+
+    if (numBytes < 0) DieWithSystemMessage("send to() failed");
+    else if (numBytes != messageLen) DieWithUserMessage("sendto() error", "sent unexpected number of bytes");
+
+    // Response received
+
+    struct sockaddr_storage fromAddr;
+
+    socklen_t fromAddrLen = sizeof(fromAddr);
+
+    char buffer[MAXSTRINGLENGTH + 1];
+    numBytes = recvfrom(sock, buffer, MAXSTRINGLENGTH, 0, (struct sockaddr *) &fromAddr, &fromAddrLen);
+
+    if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
+    else if (numBytes != messageLen) DieWithUserMessage("recvfrom() error", "received unexpected number of bytes");
+
+    if (!SockAddrsEqual(servAddr->ai_addr, (struct sockaddr *) &fromAddr)) DieWithUserMessage("recvfrom()", "received a packet from unknow soucre");
+
+    freeaddrinfo(servAddr);
+
+    buffer[messageLen] = '\0';
+
+    printf("Received: %s\n", buffer);
+
+    close(sock);
     
 
 }
