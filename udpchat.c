@@ -7,7 +7,7 @@
 #include<sys/socket.h>
 #include"Practical.h"
   
-
+// A function to setup the client
 void clientSetup(char *serverIP, char *message, char *servPort){
 
 
@@ -19,23 +19,27 @@ void clientSetup(char *serverIP, char *message, char *servPort){
         exit(1);
     }
 
-    struct addrinfo addrCriteria;
+    struct addrinfo addrCriteria;                       // Critera for addreses and matching
 
-    memset(&addrCriteria, 0, sizeof(addrCriteria));
-    addrCriteria.ai_family = AF_UNSPEC;
-    addrCriteria.ai_socktype = SOCK_DGRAM;
-    addrCriteria.ai_protocol = IPPROTO_UDP;
+    memset(&addrCriteria, 0, sizeof(addrCriteria));     // Zero out struct
+    addrCriteria.ai_family = AF_UNSPEC;                 // Address family
+    addrCriteria.ai_socktype = SOCK_DGRAM;              // Only datagram sockets
+    addrCriteria.ai_protocol = IPPROTO_UDP;             // Only use the UDP protocol
 
-    struct addrinfo *servAddr;
+    struct addrinfo *servAddr;                          // List of server address
 
     int rtnVal = getaddrinfo(serverIP, servPort, &addrCriteria, &servAddr);
 
     if (rtnVal != 0) DieWithUserMessage("getaddrinfo() failed", gai_strerror(rtnVal));
 
+    // Create a datagram/UDP socket
+
+    // Socket descriptor
     int sock = socket(servAddr->ai_family, servAddr->ai_socktype, servAddr->ai_protocol);
 
     if (sock < 0) DieWithSystemMessage("sock() failed");
 
+    // Send message to the server
     ssize_t numBytes = sendto(sock, message, messageLen, 0, servAddr->ai_addr, servAddr->ai_addrlen);
 
     if (numBytes < 0) DieWithSystemMessage("send to() failed");
@@ -45,6 +49,7 @@ void clientSetup(char *serverIP, char *message, char *servPort){
 
     struct sockaddr_storage fromAddr;
 
+    // Set length of address struct
     socklen_t fromAddrLen = sizeof(fromAddr);
 
     char buffer[MAXSTRINGLENGTH + 1];
@@ -52,10 +57,13 @@ void clientSetup(char *serverIP, char *message, char *servPort){
 
     if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
     else if (numBytes != messageLen) DieWithUserMessage("recvfrom() error", "received unexpected number of bytes");
+    
+    // Make sure the packet was received from the expected source
+    if (!SockAddrsEqual(servAddr->ai_addr, (struct sockaddr *) &fromAddr))
+    DieWithUserMessage("recvfrom()", "received a packet from unknow soucre");
 
-    if (!SockAddrsEqual(servAddr->ai_addr, (struct sockaddr *) &fromAddr)) DieWithUserMessage("recvfrom()", "received a packet from unknow soucre");
-
-    freeaddrinfo(servAddr);
+    // Give memory allocated back to the OS
+    freeaddrinfo(servAddr);            
 
     buffer[messageLen] = '\0';
 
@@ -66,6 +74,7 @@ void clientSetup(char *serverIP, char *message, char *servPort){
 
 }
 
+// A function to setup the server
 void serverSetup(char *serverPort){
 
     struct addrinfo addrCriteria;                               // Criteria for family address
