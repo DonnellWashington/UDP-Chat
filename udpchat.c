@@ -187,11 +187,17 @@ void serverChat(int sock){
 
         sendBuffer[strcspn(sendBuffer, "\n")] = '\0';
 
+        printf("Server: %s\n", sendBuffer);
+
         numBytes = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &clientAddr, clientAddrLen);
 
         if (numBytes < 0) DieWithSystemMessage("sendto() failed");
 
     }
+
+    printf("Coversation with ");
+    PrintSocketAddress((struct sockaddr *) &clientAddr, stdout);
+    printf(" ended.\n");
 
 }
 
