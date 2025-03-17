@@ -63,7 +63,7 @@ bool SockAddrsEqual(const struct sockaddr *addr1, const struct sockaddr *addr2) 
 }
   
 // A function to setup the client
-void clientSetup(char *serverIP, char *message, char *servPort){
+int clientSetup(const char *serverIp, const char *servPort, struct addrinfo **servAddrPtr){
 
 
     // Check if the message is too long
@@ -220,10 +220,8 @@ int main(int argc, char *argv[]){
     }
     // Client CLA's
     else if (argc == 4){
-        char *server = argv[1];
-        char *echoMessage = argv[2];
-        char *servPort = argv[3];
-        clientSetup(server, echoMessage, servPort);
+        struct addrinfo *servAddr;
+        int sock = clientSetup(argv[1], argv[3], &servAddr);
     }
     else DieWithUserMessage("Parameter(s)", "if server <Server Port> if client <Server Address> <Echo Word> <Server Port>");
     
