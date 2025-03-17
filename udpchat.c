@@ -99,6 +99,8 @@ void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
 
     while(1){
 
+        printf("Client: %s\n", sendBuffer);
+
         ssize_t numBytes = sendto(sock, sendBuffer, strlen(sendBuffer), 0, servAddr->ai_addr, servAddr->ai_addrlen);
 
         if (numBytes < 0) DieWithSystemMessage("sendto() failed");
@@ -111,10 +113,22 @@ void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
 
         if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
 
-        sendBuffer[strcspn(sendBuffer, "\n")] = '\0';
-        
+        revcBuffer[numBytes] = '\0';
 
+        printf("Server: %s\n", revcBuffer);
+
+        printf("Enter message: ");
+
+        if (fgets(sendBuffer, MAXSTRINGLENGTH,stdin) == NULL) break;
+
+        sendBuffer[strcspn(sendBuffer, "\n")] = '\0';
+    
     }
+
+    printf("Conversation with ");
+    PrintSocketAddress(servAddr->ai_addr, stdout);
+    printf(" ended.\n");
+
 }
 
 // A function to setup the server
