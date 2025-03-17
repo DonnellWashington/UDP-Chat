@@ -205,14 +205,19 @@ int main(int argc, char *argv[]){
 
     // Server CLA's
     if (argc == 2){
-        char *servPort = argv[1];
-        serverSetup(servPort);
+        int sock = serverSetup(argv[1]);
+        serverChat(sock);
+        close(sock);
     }
     // Client CLA's
     else if (argc == 4){
         struct addrinfo *servAddr;
         int sock = clientSetup(argv[1], argv[3], &servAddr);
+        clientChat(sock, servAddr,argv[2]);
+        freeaddrinfo(servAddr);
+        close(sock);
     }
+    
     else DieWithUserMessage("Parameter(s)", "if server <Server Port> if client <Server Address> <Echo Word> <Server Port>");
     
     return 0;
