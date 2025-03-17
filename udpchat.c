@@ -161,6 +161,7 @@ void serverSetup(char *serverPort){
     // Free addres list allocated by getaddrinfo()
     freeaddrinfo(servAddr);
 
+    // Run forever
     for ( ;; ){
         struct sockaddr_storage clntAddr;                       // Client address sets length to client address struct
         socklen_t clntAddrLen = sizeof(clntAddr);
@@ -184,9 +185,7 @@ void serverSetup(char *serverPort){
         
 
     }
-    
-    
-    
+
 
 
 }
@@ -210,22 +209,24 @@ int main(int argc, char *argv[]){
        And we know that amount of command line args differ from client to server
        Server needs to be setup first and needs 1 CLA's (port number)
        Client needs 3 (Server address, message, port number)
-       So if the cla is 1 then youre the sever and if it has 3 its the client and throw and error otherwsie
+       So if the cla is 1 then youre the sever and if it has 3 its the client and throw an error otherwsie
     */
 
-    char *server = argv[1];
-    char *echoMessage = argv[2];
-    char *servPort = argv[3];
-
     // Server CLA's
-    if(argc == 1) serverSetup(servPort);
-
+    if (argc == 2){
+        char *servPort = argv[1];
+        serverSetup(servPort);
+    }
     // Client CLA's
-    if (argc == 3) clientSetup(server, echoMessage, servPort);
-
+    else if (argc == 4){
+        char *server = argv[1];
+        char *echoMessage = argv[2];
+        char *servPort = argv[3];
+    }
     else DieWithUserMessage("Parameter(s)", "if server <Server Port> if client <Server Address> <Echo Word> <Server Port>");
     
 
     return 0;
 
 }
+
