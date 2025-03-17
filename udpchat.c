@@ -115,14 +115,14 @@ void clientSetup(char *serverIP, char *message, char *servPort){
     
     // Make sure the packet was received from the expected source
     if (!SockAddrsEqual(servAddr->ai_addr, (struct sockaddr *) &fromAddr))
-    DieWithUserMessage("recvfrom()", "received a packet from unknow soucre");
+    DieWithUserMessage("recvfrom()", "received a packet from unknow source");
 
     // Give memory allocated back to the OS
     freeaddrinfo(servAddr);            
 
     buffer[messageLen] = '\0';
 
-    printf("Received: %s\n", buffer);
+    printf("Client: %s\n", buffer);
 
     close(sock);
     
@@ -169,11 +169,15 @@ void serverSetup(char *serverPort){
         // Block until message received from client
         char buffer[MAXSTRINGLENGTH];
         ssize_t numBytesRecvd = recvfrom(sock, buffer, MAXSTRINGLENGTH, 0, (struct sockaddr *) &clntAddr, &clntAddrLen);
+        char *message = malloc(numBytesRecvd + 1);
 
         if (numBytesRecvd < 0) DieWithSystemMessage("recvfrom() failed");
 
-        fputs("Handling client client ", stdout);
-        PrintSocketAddress((struct sockaddr *) &clntAddr, stdout);
+        strncpy(message, buffer, numBytesRecvd);
+        message[numBytesRecvd] = '\0';
+
+        printf("Client: %c", message);
+        // PrintSocketAddress((struct sockaddr *) &clntAddr, stdout);
         fputc('\n', stdout);
 
         // Send received datagram back to the client
@@ -183,10 +187,7 @@ void serverSetup(char *serverPort){
 
         else if (numBytesSent != numBytesRecvd) DieWithUserMessage("sendto()", "sent unexpected number of bytes");
         
-
     }
-
-
 
 }
 
@@ -222,10 +223,10 @@ int main(int argc, char *argv[]){
         char *server = argv[1];
         char *echoMessage = argv[2];
         char *servPort = argv[3];
+        clientSetup(server, echoMessage, servPort);
     }
     else DieWithUserMessage("Parameter(s)", "if server <Server Port> if client <Server Address> <Echo Word> <Server Port>");
     
-
     return 0;
 
 }
