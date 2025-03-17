@@ -65,15 +65,6 @@ bool SockAddrsEqual(const struct sockaddr *addr1, const struct sockaddr *addr2) 
 // A function to setup the client
 int clientSetup(const char *serverIp, const char *servPort, struct addrinfo **servAddrPtr){
 
-
-    // Check if the message is too long
-    int messageLen = strlen(message);
-
-    if (messageLen > MAXSTRINGLENGTH){
-        fprintf(stderr, "%s", "The message is too long\n");
-        exit(1);
-    }
-
     struct addrinfo addrCriteria;                       // Critera for addreses and matching
 
     memset(&addrCriteria, 0, sizeof(addrCriteria));     // Zero out struct
@@ -83,54 +74,51 @@ int clientSetup(const char *serverIp, const char *servPort, struct addrinfo **se
 
     struct addrinfo *servAddr;                          // List of server address
 
-    int rtnVal = getaddrinfo(serverIP, servPort, &addrCriteria, &servAddr);
+    int rtnVal = getaddrinfo(serverIp, servPort, &addrCriteria, servAddrPtr);
 
     if (rtnVal != 0) DieWithUserMessage("getaddrinfo() failed", gai_strerror(rtnVal));
 
     // Create a datagram/UDP socket
 
     // Socket descriptor
-    int sock = socket(servAddr->ai_family, servAddr->ai_socktype, servAddr->ai_protocol);
+    int sock = socket((*servAddrPtr)->ai_family, (*servAddrPtr)->ai_socktype, (*servAddrPtr)->ai_protocol);
 
     if (sock < 0) DieWithSystemMessage("sock() failed");
 
-    // Send message to the server
-    ssize_t numBytes = sendto(sock, message, messageLen, 0, servAddr->ai_addr, servAddr->ai_addrlen);
-
-    if (numBytes < 0) DieWithSystemMessage("send to() failed");
-    else if (numBytes != messageLen) DieWithUserMessage("sendto() error", "sent unexpected number of bytes");
-
-    // Response received
-
-    struct sockaddr_storage fromAddr;
-
-    // Set length of address struct
-    socklen_t fromAddrLen = sizeof(fromAddr);
-
-    char buffer[MAXSTRINGLENGTH + 1];
-    numBytes = recvfrom(sock, buffer, MAXSTRINGLENGTH, 0, (struct sockaddr *) &fromAddr, &fromAddrLen);
-
-    if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
-    else if (numBytes != messageLen) DieWithUserMessage("recvfrom() error", "received unexpected number of bytes");
-    
-    // Make sure the packet was received from the expected source
-    if (!SockAddrsEqual(servAddr->ai_addr, (struct sockaddr *) &fromAddr))
-    DieWithUserMessage("recvfrom()", "received a packet from unknow source");
-
-    // Give memory allocated back to the OS
-    freeaddrinfo(servAddr);            
-
-    buffer[messageLen] = '\0';
-
-    printf("Client: %s\n", buffer);
-
-    close(sock);
-    
+    return sock;
 
 }
 
+void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
+    char sendBuffer[MAXSTRINGLENGTH];
+    char revcBuffer[MAXSTRINGLENGTH + 1];
+
+    strncpy(sendBuffer, initMessage, MAXSTRINGLENGTH - 1);
+
+    sendBuffer[MAXSTRINGLENGTH - 1] = '\0';
+
+    while(1){
+
+        ssize_t numBytes = sendto(sock, sendBuffer, strlen(sendBuffer), 0, servAddr->ai_addr, servAddr->ai_addrlen);
+
+        if (numBytes < 0) DieWithSystemMessage("sendto() failed");
+
+        if (strstr(sendBuffer, "goodbye!") != NULL) break;
+
+        struct sockaddr_storage fromAddr;
+        socklen_t fromAddrLen = sizeof(fromAddr);
+        numBytes = recvfrom(sock, revcBuffer, MAXSTRINGLENGTH, 0, (struct sockaddr *)&fromAddr, &fromAddrLen);
+
+        if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
+
+        sendBuffer[strcspn(sendBuffer, "\n")] = '\0';
+        
+
+    }
+}
+
 // A function to setup the server
-void serverSetup(char *serverPort){
+int serverSetup(char *serverPort){
 
     struct addrinfo addrCriteria;                               // Criteria for family address
 
@@ -154,39 +142,41 @@ void serverSetup(char *serverPort){
     if (sock < 0) DieWithSystemMessage("socket() failed");
 
     // Bind to local address
-    if (bind(sock, servAddr->ai_addr, servAddr->ai_addrlen) < 0){
-        DieWithSystemMessage("socket() failed");
-    }
+    if (bind(sock, servAddr->ai_addr, servAddr->ai_addrlen) < 0) DieWithSystemMessage("bind() failed");
 
     // Free addres list allocated by getaddrinfo()
     freeaddrinfo(servAddr);
 
-    // Run forever
-    for ( ;; ){
-        struct sockaddr_storage clntAddr;                       // Client address sets length to client address struct
-        socklen_t clntAddrLen = sizeof(clntAddr);
+    return sock;
 
-        // Block until message received from client
-        char buffer[MAXSTRINGLENGTH];
-        ssize_t numBytesRecvd = recvfrom(sock, buffer, MAXSTRINGLENGTH, 0, (struct sockaddr *) &clntAddr, &clntAddrLen);
-        char *message = malloc(numBytesRecvd + 1);
+}
 
-        if (numBytesRecvd < 0) DieWithSystemMessage("recvfrom() failed");
+void serverChat(int sock){
 
-        strncpy(message, buffer, numBytesRecvd);
-        message[numBytesRecvd] = '\0';
+    char recvBuffer[MAXSTRINGLENGTH + 1];
+    char sendBuffer[MAXSTRINGLENGTH];
+    struct sockaddr_storage clientAddr;
+    socklen_t clientAddrLen = sizeof(clientAddr);
 
-        printf("Client: %c", message);
-        // PrintSocketAddress((struct sockaddr *) &clntAddr, stdout);
-        fputc('\n', stdout);
+    while(1){
+        ssize_t numBytes = recvfrom(sock, recvBuffer, MAXSTRINGLENGTH, 0, (struct sockaddr *)&clientAddr, &clientAddrLen);
 
-        // Send received datagram back to the client
-        ssize_t numBytesSent = sendto(sock, buffer,numBytesRecvd, 0, (struct sockaddr *) &clntAddr, sizeof(clntAddr));
+        if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
 
-        if (numBytesSent < 0) DieWithSystemMessage("sendto() failed");
+        recvBuffer[numBytes] = '\0';
+        printf("Client: %s\n", recvBuffer);
 
-        else if (numBytesSent != numBytesRecvd) DieWithUserMessage("sendto()", "sent unexpected number of bytes");
-        
+        if (strstr(recvBuffer, "goodbye!") != NULL) break;
+
+        printf("Enter a reply: ");
+        if (fgets(sendBuffer, MAXSTRINGLENGTH, stdin) == NULL) break;
+
+        sendBuffer[strcspn(sendBuffer, "\n")] = '\0';
+
+        numBytes = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &clientAddr, clientAddrLen);
+
+        if (numBytes < 0) DieWithSystemMessage("sendto() failed");
+
     }
 
 }
