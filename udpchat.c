@@ -89,6 +89,7 @@ int clientSetup(const char *serverIp, const char *servPort, struct addrinfo **se
 
 }
 
+// A function to sending messages back and fourth to the server with handling for exiting the program
 void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
     char sendBuffer[MAXSTRINGLENGTH];
     char revcBuffer[MAXSTRINGLENGTH + 1];
@@ -97,14 +98,17 @@ void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
 
     sendBuffer[MAXSTRINGLENGTH - 1] = '\0';
 
+    // Coversation loop
     while(1){
 
+        // Storing message to send to server
         printf("Client: %s\n", sendBuffer);
 
         ssize_t numBytes = sendto(sock, sendBuffer, strlen(sendBuffer), 0, servAddr->ai_addr, servAddr->ai_addrlen);
 
         if (numBytes < 0) DieWithSystemMessage("sendto() failed");
 
+        // If the message is "Goodbye!" break
         if (strstr(sendBuffer, "Goodbye!") != NULL) break;
 
         struct sockaddr_storage fromAddr;
@@ -113,6 +117,7 @@ void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
 
         if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
 
+        // Message printing, formatting, and null terminating char
         revcBuffer[numBytes] = '\0';
 
         printf("Server: %s\n", revcBuffer);
@@ -125,6 +130,7 @@ void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
     
     }
 
+    // The conversation has ended print the address of the communicating party and close socket
     printf("Conversation with ");
     PrintSocketAddress(servAddr->ai_addr, stdout);
     printf(" ended.\n");
@@ -165,6 +171,7 @@ int serverSetup(char *serverPort){
 
 }
 
+// A function to control sending and receiving between client y server handling for exiting program
 void serverChat(int sock){
 
     char recvBuffer[MAXSTRINGLENGTH + 1];
@@ -172,19 +179,25 @@ void serverChat(int sock){
     struct sockaddr_storage clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
 
+    // Keep the conversation going until user says goodbye
     while(1){
+
+        // stroring the message received from the user
         ssize_t numBytes = recvfrom(sock, recvBuffer, MAXSTRINGLENGTH, 0, (struct sockaddr *)&clientAddr, &clientAddrLen);
 
         if (numBytes < 0) DieWithSystemMessage("recvfrom() failed");
 
+        // Printing the message the client sent
         recvBuffer[numBytes] = '\0';
         printf("Client: %s\n", recvBuffer);
 
+        // If client says goodbye the server will print goodbye also and exit
         if (strstr(recvBuffer, "Goodbye!") != NULL){ 
             printf("Server : Goodbye!\n");
             break;
         }
 
+        // Sending reply to the client
         printf("Enter a reply: ");
         if (fgets(sendBuffer, MAXSTRINGLENGTH, stdin) == NULL) break;
 
@@ -204,6 +217,7 @@ void serverChat(int sock){
 
 }
 
+// A function to handle errors and exit program
 void DieWithUserMessage(const char *msg, const char *detail){
     fputs(msg, stderr);
     fputs(": ", stderr);
@@ -212,6 +226,7 @@ void DieWithUserMessage(const char *msg, const char *detail){
     exit(1);
 }
 
+// A function to handle errors and exit program
 void DieWithSystemMessage(const char *msg){
     perror(msg);
     exit(1);
