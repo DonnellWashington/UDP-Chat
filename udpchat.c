@@ -105,7 +105,7 @@ void clientChat(int sock, struct addrinfo *servAddr, const char *initMessage){
 
         if (numBytes < 0) DieWithSystemMessage("sendto() failed");
 
-        if (strstr(sendBuffer, "goodbye!") != NULL) break;
+        if (strstr(sendBuffer, "Goodbye!") != NULL) break;
 
         struct sockaddr_storage fromAddr;
         socklen_t fromAddrLen = sizeof(fromAddr);
@@ -180,7 +180,10 @@ void serverChat(int sock){
         recvBuffer[numBytes] = '\0';
         printf("Client: %s\n", recvBuffer);
 
-        if (strstr(recvBuffer, "goodbye!") != NULL) break;
+        if (strstr(recvBuffer, "Goodbye!") != NULL){ 
+            printf("Server : Goodbye!\n");
+            break;
+        }
 
         printf("Enter a reply: ");
         if (fgets(sendBuffer, MAXSTRINGLENGTH, stdin) == NULL) break;
