@@ -94,8 +94,6 @@ int clientSetup(const char *serverIp, const char *servPort, struct addrinfo **se
     addrCriteria.ai_socktype = SOCK_DGRAM;              // Only datagram sockets
     addrCriteria.ai_protocol = IPPROTO_UDP;             // Only use the UDP protocol
 
-    struct addrinfo *servAddr;                          // List of server address
-
     int rtnVal = getaddrinfo(serverIp, servPort, &addrCriteria, servAddrPtr);
 
     if (rtnVal != 0) DieWithUserMessage("getaddrinfo() failed", gai_strerror(rtnVal));
